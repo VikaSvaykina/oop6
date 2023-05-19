@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Windows.Forms;
+using static oop6.Form1;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace oop6
@@ -61,7 +62,7 @@ namespace oop6
 
         private void Form1_MouseClick(object sender, MouseEventArgs e)
         {
-            
+
             if (!ctrl)
             {
                 foreach (CFigure f in FigureList)
@@ -93,7 +94,7 @@ namespace oop6
                         }
                 }
                 FigureList.Add(figure);
-                
+
             }
             else if (ctrl)
             {
@@ -209,7 +210,7 @@ namespace oop6
         {
             CGroup group = new CGroup();
             for (int i = 0; i < FigureList.Count; i++)
-            { 
+            {
                 if (FigureList[i].highlight)
                 {
                     group.AddFigure(FigureList[i]);
@@ -230,7 +231,7 @@ namespace oop6
                 {
                     if (f.highlight && f.CanMove("up", this))
                     {
-                        f.Move("up");
+                        f.Move("up", this);
                     }
                 }
             }
@@ -240,7 +241,7 @@ namespace oop6
                 {
                     if (f.highlight && f.CanMove("down", this))
                     {
-                        f.Move("down");
+                        f.Move("down", this);
                     }
                 }
             }
@@ -250,7 +251,7 @@ namespace oop6
                 {
                     if (f.highlight && f.CanMove("right", this))
                     {
-                        f.Move("right");
+                        f.Move("right", this);
                     }
                 }
             }
@@ -260,7 +261,7 @@ namespace oop6
                 {
                     if (f.highlight && f.CanMove("left", this))
                     {
-                        f.Move("left");
+                        f.Move("left", this);
                     }
                 }
             }
@@ -364,7 +365,7 @@ namespace oop6
 
         private void button6_Click(object sender, EventArgs e)
         {
-            foreach(CFigure f in FigureList)
+            foreach (CFigure f in FigureList)
             {
                 f.SetHighlight(false);
             }
@@ -440,6 +441,31 @@ namespace oop6
             Refresh();
             SyncLtoTree();
         }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            int objectsSelected = 0;
+            foreach (CFigure f in FigureList)
+            {
+                if (f.highlight) objectsSelected++;
+            }
+            if (objectsSelected == 2)
+            {
+                Line line = new Line();
+                foreach (CFigure f in FigureList)
+                {
+                    if (f.highlight)
+                        line.AddFigure(f);
+                }
+                foreach (CFigure fig in line.twofigs)
+                {
+                    FigureList.Remove(fig);
+                }
+                FigureList.Add(line);
+                Refresh();
+                SyncLtoTree();
+            }
+        }
     }
 
     public class CFigure
@@ -473,7 +499,7 @@ namespace oop6
         }
         public virtual void ChangeSize(string change, Form form)
         {
-            if (change == "plus" && rad<150)
+            if (change == "plus" && rad < 150)
             {
                 if ((y + rad) < (int)form.ClientSize.Height && (x + rad) < (int)form.ClientSize.Width)
                 {
@@ -517,7 +543,7 @@ namespace oop6
             }
             else return false;
         }
-        public virtual void Move(string direction)
+        public virtual void Move(string direction, Form form)
         {
             if (direction == "up")
             {
@@ -676,7 +702,7 @@ namespace oop6
             foreach (CFigure f in figures)
             {
                 f.DrawFigure(g);
-            }    
+            }
         }
         public override bool CanMove(string direction, Form form)
         {
@@ -689,16 +715,16 @@ namespace oop6
             }
             return true;
         }
-        public override void Move(string direction)
+        public override void Move(string direction, Form form)
         {
-            foreach(CFigure f in figures)
+            foreach (CFigure f in figures)
             {
-                f.Move(direction);
+                f.Move(direction, form);
             }
         }
         public override void ChangeSize(string change, Form form)
         {
-            foreach(CFigure f in figures)
+            foreach (CFigure f in figures)
             {
                 f.ChangeSize(change, form);
             }
@@ -734,74 +760,97 @@ namespace oop6
                 child.RetData(treeData);
             }
         }
+    }
 
-        public class Line : CFigure
+    public class Line : CFigure
+    {
+        public List<CFigure> twofigs = new List<CFigure>();
+        public bool f1s = false;
+        public bool f2s = false;
+
+        public void AddFigure(CFigure figure)
         {
-            public List<CFigure> twofigs = new List<CFigure>();
-            public bool f1s = false;
-            public bool f2s = false;
-
-            public void AddFigure(CFigure figure)
+            if (twofigs.Count < 2)
             {
-                if (twofigs.Count < 2)
-                {
-                    figure.SetHighlight(false);
-                    if (twofigs.Count == 0)
-                        figure.SetColor(Color.ForestGreen);
-                    else
-                        figure.SetColor(Color.DarkOliveGreen);
-                    twofigs.Add(figure);
-                }
+                figure.SetHighlight(false);
+                if (twofigs.Count == 0)
+                    figure.SetColor(Color.YellowGreen);
+                else
+                    figure.SetColor(Color.GreenYellow);
+                twofigs.Add(figure);
             }
+        }
 
-            public override void SetCtrl(bool pressed)
+        public override void SetCtrl(bool pressed)
+        {
+            foreach (CFigure component in twofigs)
+            {
+                component.ctrl = pressed;
+            }
+            ctrl = pressed;
+        }
+
+        public override void SetHighlight(bool cond)
+        {
+            if (!highlight)
+            {
+                twofigs[0].SetHighlight(f1s);
+                twofigs[1].SetHighlight(f2s);
+                highlight = cond;
+            }
+            else
             {
                 foreach (CFigure component in twofigs)
                 {
-                    component.ctrl = pressed;
+                    component.SetHighlight(cond);
                 }
-                ctrl = pressed;
+                highlight = cond;
+                f1s = cond;
+                f2s = cond;
             }
+        }
 
-            public override void SetHighlight(bool cond)
+        public override bool CheckMouse(MouseEventArgs e)
+        {
+            if (twofigs[0].CheckMouse(e))
             {
-                if (!highlight)
-                {
-                    twofigs[0].SetHighlight(f1s);
-                    twofigs[1].SetHighlight(f2s);
-                    highlight = cond;
-                }
-                else
-                {
-                    foreach (CFigure component in twofigs)
-                    {
-                        component.SetHighlight(cond);
-                    }
-                    highlight = cond;
-                    f1s = cond;
-                    f2s = cond;
-                }
+                f1s = true;
+                return true;
             }
+            else if (twofigs[1].CheckMouse(e))
+            {
+                f2s = true;
+                return true;
+            }
+            else
+            {
+                f1s = false;
+                f2s = false;
+                return false;
+            }
+        }
+        public override void Move(string direction, Form form)
+        {
+            if (twofigs[0].CanMove(direction, form) && twofigs[0].highlight && !twofigs[1].highlight)
+            {
+                twofigs[1].SetHighlight(true);
+                twofigs[0].Move(direction, form);
+                twofigs[1].Move(direction, form);
+                twofigs[1].SetHighlight(false);
+            }
+            else if (twofigs[1].CanMove(direction, form) && twofigs[1].highlight && !twofigs[0].highlight)
+            {
+                twofigs[1].Move(direction, form);
+            }
+        }
 
-            public override bool CheckMouse(MouseEventArgs e)
+        public override void DrawFigure(Graphics g)
+        {
+            foreach(CFigure f in twofigs)
             {
-                if (twofigs[0].CheckMouse(e))
-                {
-                    f1s = true;
-                    return true;
-                }
-                else if (twofigs[1].CheckMouse(e))
-                {
-                    f2s = true;
-                    return true;
-                }
-                else
-                {
-                    f1s = false;
-                    f2s = false;
-                    return false;
-                }
+                f.DrawFigure(g);
             }
+            g.DrawLine(new Pen(twofigs[0].color, 3), new Point(twofigs[0].x, twofigs[0].y), new Point(twofigs[1].x, twofigs[1].y));
         }
     }
 }
